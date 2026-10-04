@@ -13,24 +13,20 @@ public class Dado {
         this.numero = numero;
         valor = 0;
 
-        // Crear el generador de números aleatorios
         random = new Random();
     }
 
-    public int lanzar() {
+    public void lanzar() {
 
-        valor = random.nextInt(6) + 1;
-
-        return valor;
-    }
-
-    public int getValor() {
-
-        return valor;
+        valor =
+                random.nextInt(6) + 1;
     }
 
     public int getNumero() {
-
         return numero;
+    }
+
+    public int getValor() {
+        return valor;
     }
 }

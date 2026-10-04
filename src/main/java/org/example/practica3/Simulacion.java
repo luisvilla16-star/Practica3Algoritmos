@@ -3,33 +3,32 @@ package org.example.practica3;
 public class Simulacion {
 
     private Estacion[] estaciones;
-
     private Dado[] dados;
-
     private ColaSimple<Cliente>[] colas;
 
     private int[] fichasNuevas;
+    private int[] ultimoMovimiento;
 
     private int siguienteCliente;
-
     private int ronda;
-
     private int personasTerminadas;
 
-    private boolean iniciado;
+    private int salidasUltimoTurno;
 
+    private int[] personasSalieron;
+    private int[] tiemposPersonas;
+    private int cantidadSalieron;
+
+    private boolean iniciado;
     private boolean tocaMover;
 
     public Simulacion() {
 
         estaciones = new Estacion[10];
-
         dados = new Dado[10];
 
-        // ==================================
-        // CREAR ESTACIONES Y DADOS
-        // ==================================
-
+        // Crear las 10 estaciones
+        // y colocar un dado en cada una
         for (int i = 0; i < 10; i++) {
 
             estaciones[i] =
@@ -38,16 +37,11 @@ public class Simulacion {
             dados[i] =
                     new Dado(i + 1);
 
-            // Al principio cada estación
-            // tiene un dado
             estaciones[i]
                     .agregarDado(dados[i]);
         }
 
-        // ==================================
-        // CREAR COLAS
-        // ==================================
-
+        // Crear las 9 colas
         colas = new ColaSimple[9];
 
         for (int i = 0; i < 9; i++) {
@@ -56,23 +50,34 @@ public class Simulacion {
                     new ColaSimple<>(100);
         }
 
-        fichasNuevas =
-                new int[9];
+        fichasNuevas = new int[9];
+
+        // Guarda cuánto movió
+        // cada estación
+        ultimoMovimiento =
+                new int[10];
+
+        personasSalieron =
+                new int[100];
+
+        tiemposPersonas =
+                new int[100];
 
         siguienteCliente = 1;
 
         ronda = 0;
-
         personasTerminadas = 0;
 
-        iniciado = false;
+        salidasUltimoTurno = 0;
+        cantidadSalieron = 0;
 
+        iniciado = false;
         tocaMover = false;
     }
 
-    // ==================================
-    // INICIAR JUEGO
-    // ==================================
+    // =====================================
+    // INICIAR
+    // =====================================
 
     public void iniciar() {
 
@@ -82,13 +87,16 @@ public class Simulacion {
 
         // 4 personas en cada una
         // de las 9 colas
+        // 9 x 4 = 36
+
         for (int i = 0; i < 9; i++) {
 
             for (int j = 0; j < 4; j++) {
 
                 Cliente cliente =
                         new Cliente(
-                                siguienteCliente
+                                siguienteCliente,
+                                0
                         );
 
                 colas[i]
@@ -98,22 +106,13 @@ public class Simulacion {
             }
         }
 
-        for (int i = 0; i < 9; i++) {
-            fichasNuevas[i] = 0;
-        }
-
-        ronda = 0;
-
-        personasTerminadas = 0;
-
         iniciado = true;
-
         tocaMover = false;
     }
 
-    // ==================================
+    // =====================================
     // LANZAR DADOS
-    // ==================================
+    // =====================================
 
     public void lanzarDados() {
 
@@ -138,7 +137,7 @@ public class Simulacion {
         ronda++;
 
         // Las fichas azules anteriores
-        // dejan de ser nuevas
+        // pasan a ser grises
         for (int i = 0; i < 9; i++) {
 
             fichasNuevas[i] = 0;
@@ -147,9 +146,9 @@ public class Simulacion {
         tocaMover = true;
     }
 
-    // ==================================
+    // =====================================
     // MOVER DADO
-    // ==================================
+    // =====================================
 
     public void moverDado(
             int numeroDado,
@@ -170,8 +169,7 @@ public class Simulacion {
         Dado dado =
                 dados[numeroDado];
 
-        // Buscar quién tiene actualmente
-        // el dado
+        // Quitar de estación anterior
         for (int i = 0; i < 10; i++) {
 
             if (estaciones[i]
@@ -184,45 +182,77 @@ public class Simulacion {
             }
         }
 
-        // Darlo a la nueva estación
+        // Agregar a estación nueva
         estaciones[nuevaEstacion]
                 .agregarDado(dado);
     }
 
-    // ==================================
+    // =====================================
     // MOVER PERSONAS
-    // ==================================
+    // =====================================
 
     public void moverPersonas() {
 
-        if (!iniciado) {
+        if (!iniciado ||
+                !tocaMover) {
+
             return;
         }
 
-        if (!tocaMover) {
-            return;
+        salidasUltimoTurno = 0;
+        cantidadSalieron = 0;
+
+        int[] movimientos =
+                calcularMovimientos();
+
+        // Guardar actividad de
+        // cada jugador
+        for (int i = 0; i < 10; i++) {
+
+            ultimoMovimiento[i] =
+                    movimientos[i];
         }
 
-        int[] cantidadMover =
+        sacarTerminados(
+                movimientos[9]
+        );
+
+        moverEntreEstaciones(
+                movimientos
+        );
+
+        crearPersonas(
+                movimientos[0]
+        );
+
+        // Guardar fichas que
+        // acaban de llegar
+        for (int i = 0; i < 9; i++) {
+
+            fichasNuevas[i] =
+                    movimientos[i];
+        }
+
+        tocaMover = false;
+    }
+
+    // =====================================
+    // CALCULAR CUÁNTOS PUEDEN MOVERSE
+    // =====================================
+
+    private int[] calcularMovimientos() {
+
+        int[] movimientos =
                 new int[10];
 
-        // ==================================
-        // ESTACION 1
-        // ==================================
-
-        // La estación 1 recibe personas
-        // desde fuera del sistema.
-        cantidadMover[0] =
+        // Estación 1:
+        // entrada ilimitada
+        movimientos[0] =
                 estaciones[0]
                         .getResultado();
 
-        // ==================================
-        // ESTACIONES 2 A 10
-        // ==================================
-
-        for (int i = 1;
-             i < 10;
-             i++) {
+        // Estaciones 2 a 10
+        for (int i = 1; i < 10; i++) {
 
             int capacidad =
                     estaciones[i]
@@ -232,27 +262,30 @@ public class Simulacion {
                     colas[i - 1]
                             .cantidad();
 
-            if (capacidad <
-                    disponibles) {
+            if (capacidad < disponibles) {
 
-                cantidadMover[i] =
+                movimientos[i] =
                         capacidad;
 
             } else {
 
-                cantidadMover[i] =
+                movimientos[i] =
                         disponibles;
             }
         }
 
-        // ==================================
-        // ESTACION 10
-        // ==================================
+        return movimientos;
+    }
 
-        // Estas personas terminan
-        // el proceso
+    // =====================================
+    // SACAR TERMINADOS
+    // =====================================
+
+    private void sacarTerminados(
+            int cantidad) {
+
         for (int i = 0;
-             i < cantidadMover[9];
+             i < cantidad;
              i++) {
 
             Cliente cliente =
@@ -262,22 +295,42 @@ public class Simulacion {
             if (cliente != null) {
 
                 personasTerminadas++;
+                salidasUltimoTurno++;
+
+                int tiempo =
+                        ronda
+                                - cliente.getTurnoEntrada();
+
+                personasSalieron[
+                        cantidadSalieron
+                        ] = cliente.getNumero();
+
+                tiemposPersonas[
+                        cantidadSalieron
+                        ] = tiempo;
+
+                cantidadSalieron++;
             }
         }
+    }
 
-        // ==================================
-        // ESTACIONES 9 A 2
-        // ==================================
+    // =====================================
+    // MOVER ENTRE ESTACIONES
+    // =====================================
 
-        // Se hace de atrás hacia adelante
-        // para que nadie avance dos veces
-        // en una misma ronda.
-        for (int i = 8;
-             i >= 1;
-             i--) {
+    private void moverEntreEstaciones(
+            int[] movimientos) {
+
+        /*
+         * Se mueve de atrás hacia adelante
+         * para evitar que una persona
+         * avance dos veces en el mismo turno.
+         */
+
+        for (int i = 8; i >= 1; i--) {
 
             for (int j = 0;
-                 j < cantidadMover[i];
+                 j < movimientos[i];
                  j++) {
 
                 Cliente cliente =
@@ -291,19 +344,23 @@ public class Simulacion {
                 }
             }
         }
+    }
 
-        // ==================================
-        // ESTACION 1
-        // ==================================
+    // =====================================
+    // PERSONAS NUEVAS
+    // =====================================
 
-        // Agregar personas nuevas
+    private void crearPersonas(
+            int cantidad) {
+
         for (int i = 0;
-             i < cantidadMover[0];
+             i < cantidad;
              i++) {
 
             Cliente cliente =
                     new Cliente(
-                            siguienteCliente
+                            siguienteCliente,
+                            ronda
                     );
 
             colas[0]
@@ -311,45 +368,28 @@ public class Simulacion {
 
             siguienteCliente++;
         }
-
-        // ==================================
-        // GUARDAR FICHAS NUEVAS
-        // ==================================
-
-        for (int i = 0;
-             i < 9;
-             i++) {
-
-            fichasNuevas[i] =
-                    cantidadMover[i];
-        }
-
-        tocaMover = false;
     }
 
-    // ==================================
-    // PERSONAS EN EL SISTEMA
-    // ==================================
+    // =====================================
+    // PERSONAS EN SISTEMA
+    // =====================================
 
     public int personasEnSistema() {
 
         int total = 0;
 
-        for (int i = 0;
-             i < colas.length;
-             i++) {
+        for (int i = 0; i < 9; i++) {
 
-            total =
-                    total
-                            + colas[i].cantidad();
+            total +=
+                    colas[i].cantidad();
         }
 
         return total;
     }
 
-    // ==================================
+    // =====================================
     // GETTERS
-    // ==================================
+    // =====================================
 
     public Estacion[] getEstaciones() {
         return estaciones;
@@ -367,12 +407,32 @@ public class Simulacion {
         return fichasNuevas;
     }
 
+    public int[] getUltimoMovimiento() {
+        return ultimoMovimiento;
+    }
+
     public int getRonda() {
         return ronda;
     }
 
     public int getPersonasTerminadas() {
         return personasTerminadas;
+    }
+
+    public int getSalidasUltimoTurno() {
+        return salidasUltimoTurno;
+    }
+
+    public int[] getPersonasSalieron() {
+        return personasSalieron;
+    }
+
+    public int[] getTiemposPersonas() {
+        return tiemposPersonas;
+    }
+
+    public int getCantidadSalieron() {
+        return cantidadSalieron;
     }
 
     public boolean isIniciado() {
@@ -385,7 +445,7 @@ public class Simulacion {
 
     public boolean isFinalizado() {
 
-        return ronda >= 20 &&
-                !tocaMover;
+        return ronda >= 20
+                && !tocaMover;
     }
 }

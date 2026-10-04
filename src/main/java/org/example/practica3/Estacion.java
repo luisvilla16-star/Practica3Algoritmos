@@ -7,7 +7,6 @@ public class Estacion {
     private Dado[] dados;
 
     private int cantidadDados;
-
     private int resultado;
 
     public Estacion(int numero) {
@@ -17,11 +16,9 @@ public class Estacion {
         dados = new Dado[10];
 
         cantidadDados = 0;
-
         resultado = 0;
     }
 
-    // Agrega un dado a la estación
     public void agregarDado(Dado dado) {
 
         if (cantidadDados < 10) {
@@ -32,23 +29,24 @@ public class Estacion {
         }
     }
 
-    // Quita un dado de la estación
     public void quitarDado(Dado dado) {
 
-        for (int i = 0; i < cantidadDados; i++) {
+        for (int i = 0;
+             i < cantidadDados;
+             i++) {
 
             if (dados[i] == dado) {
 
-                // Recorrer los dados
-                // para no dejar espacios vacíos
                 for (int j = i;
                      j < cantidadDados - 1;
                      j++) {
 
-                    dados[j] = dados[j + 1];
+                    dados[j] =
+                            dados[j + 1];
                 }
 
-                dados[cantidadDados - 1] = null;
+                dados[cantidadDados - 1] =
+                        null;
 
                 cantidadDados--;
 
@@ -57,10 +55,11 @@ public class Estacion {
         }
     }
 
-    // Revisa si la estación tiene un dado
     public boolean tieneDado(Dado dado) {
 
-        for (int i = 0; i < cantidadDados; i++) {
+        for (int i = 0;
+             i < cantidadDados;
+             i++) {
 
             if (dados[i] == dado) {
                 return true;
@@ -70,7 +69,6 @@ public class Estacion {
         return false;
     }
 
-    // Lanza todos los dados de la estación
     public void lanzarDados() {
 
         resultado = 0;

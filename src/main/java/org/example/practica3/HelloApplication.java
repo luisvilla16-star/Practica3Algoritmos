@@ -16,16 +16,12 @@ public class HelloApplication extends Application {
                 controlador.crearEscena();
 
         stage.setTitle("The Dice Game 2");
-
         stage.setScene(scene);
 
-        // TAMAÑO INICIAL DEL JUEGO
         stage.setWidth(1200);
-        stage.setHeight(685);
+        stage.setHeight(650);
 
-        // Sí permite agrandar y reducir después
         stage.setResizable(true);
-
         stage.show();
     }
 
